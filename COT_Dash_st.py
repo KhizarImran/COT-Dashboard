@@ -38,14 +38,21 @@ def main():
     # Title
     st.title('COT Report Dashboard')
     
-    # First chart
     selected_futures = st.selectbox("Select Futures Instrument", futures_list_display)
-    filtered_data = filtered_df[filtered_df["Market and Exchange Names"] == selected_futures]
-    plot_chart(filtered_data[["% of OI-Noncommercial-Long (All)", "% of OI-Noncommercial-Short (All)"]],
-               "Noncommercial Positions")
+    
+    # Display charts in two columns layout
+    col1, col2 = st.columns([1, 1])  # Split the layout into two columns
+    
+    # First chart
+    with col1:
+        filtered_data = filtered_df[filtered_df["Market and Exchange Names"] == selected_futures]
+        plot_chart(filtered_data[["% of OI-Noncommercial-Long (All)", "% of OI-Noncommercial-Short (All)"]],
+                   "Noncommercial Positions")
     
     # Second Chart
-    plot_chart(filtered_data["Flip"], "Difference in Noncommercial Positions i.e 'Flip'")
+    with col2:
+        filtered_data = filtered_df[filtered_df["Market and Exchange Names"] == selected_futures]
+        plot_chart(filtered_data["Flip"], "Difference in Noncommercial Positions i.e 'Flip'")
 
 if __name__ == "__main__":
     main()
