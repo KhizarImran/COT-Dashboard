@@ -2,7 +2,7 @@ import pandas as pd
 import cot_reports as cot
 import streamlit as st 
 
-@st.cache_data
+
 def load_data(year=2024, report_type='legacy_fut'):
     df = cot.cot_year(year=year, cot_report_type=report_type)
     df["As of Date in Form YYYY-MM-DD"] = pd.to_datetime(df["As of Date in Form YYYY-MM-DD"])
