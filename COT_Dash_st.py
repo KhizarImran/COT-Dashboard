@@ -33,7 +33,16 @@ def main():
                             "E-MINI S&P 500 - CHICAGO MERCANTILE EXCHANGE",
                             "RUSSELL E-MINI - CHICAGO MERCANTILE EXCHANGE",
                             "BITCOIN - CHICAGO MERCANTILE EXCHANGE",
-                            "VIX FUTURES - CBOE FUTURES EXCHANGE"]
+                            "VIX FUTURES - CBOE FUTURES EXCHANGE",
+                            "GOLD - COMMODITY EXCHANGE INC.",
+                            "EURO SHORT TERM RATE - CHICAGO MERCANTILE EXCHANGE",
+                            "EURO FX - CHICAGO MERCANTILE EXCHANGE",
+                            "CANADIAN DOLLAR - CHICAGO MERCANTILE EXCHANGE",
+                            "SWISS FRANC - CHICAGO MERCANTILE EXCHANGE",
+                            "BRITISH POUND - CHICAGO MERCANTILE EXCHANGE",
+                            "JAPANESE YEN - CHICAGO MERCANTILE EXCHANGE",
+                            "NZ DOLLAR - CHICAGO MERCANTILE EXCHANGE",
+                            "AUSTRALIAN DOLLAR - CHICAGO MERCANTILE EXCHANGE"]
     
     # Title
     st.title('COT Report Dashboard')
