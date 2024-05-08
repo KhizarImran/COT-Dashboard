@@ -33,6 +33,7 @@ def main():
                             "E-MINI S&P 500 - CHICAGO MERCANTILE EXCHANGE",
                             "RUSSELL E-MINI - CHICAGO MERCANTILE EXCHANGE",
                             "BITCOIN - CHICAGO MERCANTILE EXCHANGE",
+                            "WTI FINANCIAL CRUDE OIL - NEW YORK MERCANTILE EXCHANGE",
                             "VIX FUTURES - CBOE FUTURES EXCHANGE",
                             "GOLD - COMMODITY EXCHANGE INC.",
                             "EURO SHORT TERM RATE - CHICAGO MERCANTILE EXCHANGE",
