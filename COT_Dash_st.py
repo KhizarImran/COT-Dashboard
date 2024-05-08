@@ -1,7 +1,8 @@
 import pandas as pd
 import cot_reports as cot
 import streamlit as st 
-
+# Set the page layout to wide
+st.set_page_config(layout="wide")
 
 def load_data(year=2024, report_type='legacy_fut'):
     df = cot.cot_year(year=year, cot_report_type=report_type)
