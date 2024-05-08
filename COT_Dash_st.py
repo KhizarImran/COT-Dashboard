@@ -18,6 +18,8 @@ def prepare_data(df):
     return filtered_df
 
 def plot_chart(data, title):
+    # Rename columns for easier legend
+    data.columns = ['Longs (All)', 'Shorts (All)']
     st.line_chart(data, use_container_width=True)
     st.text(title)
 
