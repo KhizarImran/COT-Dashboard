@@ -1,1 +1,3 @@
 cot_reports
+yfinance
+plotly
