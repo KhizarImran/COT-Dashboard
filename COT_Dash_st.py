@@ -4,7 +4,6 @@ import streamlit as st
 import yfinance as yf
 import plotly.graph_objects as go
 
-
 # Set the page layout to wide
 st.set_page_config(layout="wide")
 
@@ -57,18 +56,11 @@ def plot_candlestick_chart(data, title):
     fig.update_layout(title=title, xaxis_title='Date', yaxis_title='Price')
     st.plotly_chart(fig, use_container_width=True)
 
-def main():
-    # Load data
-    df = load_data()
-    
-    # Prepare data
-    filtered_df = prepare_data(df)
+def display_cot_charts(filtered_df):
+    st.header("COT Report Analysis")
     
     # Get unique futures instruments containing "CHICAGO MERCANTILE EXCHANGE"
     futures_list_display = filtered_df[filtered_df["Market and Exchange Names"].str.contains("CHICAGO MERCANTILE EXCHANGE")]["Market and Exchange Names"].unique()
-    
-    # Title
-    st.title('COT Report Dashboard')
     
     selected_futures = st.selectbox("Select Futures Instrument", futures_list_display)
     
@@ -91,12 +83,9 @@ def main():
         filtered_data = filtered_df[filtered_df["Market and Exchange Names"] == selected_futures]
         plot_chart(filtered_data[["% of OI-Nonreportable-Long (All)", "% of OI-Nonreportable-Short (All)"]],
                    "Nonreportable Positions")
-    
-    # Load forex data
-    forex_data = load_forex_data()
-    
-    # Add heading for FX Pair section
-    st.header("FX Pair")
+
+def display_forex_charts(forex_data):
+    st.header("Forex Analysis")
     
     # Select forex pair
     g10_pairs_display = ['EURUSD', 'USDJPY', 'GBPUSD', 'AUDUSD', 'NZDUSD', 'USDCAD', 'USDCHF', 'EURGBP', 'EURJPY', 'GBPJPY']
@@ -116,10 +105,33 @@ def main():
         'GBPJPY': 'GBPJPY=X'
     }
     
-    # Plot selected forex pair data
+    # Plot selected forex pair data 
     selected_pair_ticker = pair_mapping[selected_pair]
     forex_pair_data = forex_data[selected_pair_ticker]
     plot_candlestick_chart(forex_pair_data, f"{selected_pair} Price")
+
+def main():
+    # Load data
+    df = load_data()
+    
+    # Prepare data
+    filtered_df = prepare_data(df)
+    
+    # Load forex data
+    forex_data = load_forex_data()
+    
+    # Title
+    st.title('Market Analysis Dashboard')
+    
+    # Create a menu for selecting between COT and Forex analysis
+    st.sidebar.header("Analysis Options")
+    menu = ["COT Report Analysis", "Forex Analysis"]
+    choice = st.sidebar.radio("Select Analysis Type", menu)
+    
+    if choice == "COT Report Analysis":
+        display_cot_charts(filtered_df)
+    elif choice == "Forex Analysis":
+        display_forex_charts(forex_data)
 
 if __name__ == "__main__":
     main()
