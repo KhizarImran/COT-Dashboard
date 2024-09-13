@@ -1,7 +1,6 @@
 import pandas as pd
 import cot_reports as cot
 import streamlit as st
-import yfinance as yf
 import plotly.graph_objects as go
 
 # Set the page layout to wide
@@ -13,125 +12,116 @@ def load_data(year=2024, report_type='legacy_fut'):
     df["As of Date in Form YYYY-MM-DD"] = pd.to_datetime(df["As of Date in Form YYYY-MM-DD"])
     return df
 
-def prepare_data(df):
-    # Filter rows for Chicago Mercantile Exchange
-    chicago_df = df[df["Market and Exchange Names"].str.contains("CHICAGO MERCANTILE EXCHANGE")]
+@st.cache_data
+def load_instruments():
+    with open('financials.txt', 'r') as file:
+        return [line.strip() for line in file]
+
+def prepare_data(df, instruments):
+    # Filter rows for specified instruments
+    filtered_df = df[df["Market and Exchange Names"].isin(instruments)]
     
     # Select relevant columns
-    filtered_df = chicago_df[["Market and Exchange Names", "As of Date in Form YYYY-MM-DD", 
-                              "Noncommercial Positions-Long (All)", "Noncommercial Positions-Short (All)", 
-                              "Change in Noncommercial-Long (All)", "Change in Noncommercial-Short (All)",
-                              "% of OI-Noncommercial-Long (All)", "% of OI-Noncommercial-Short (All)",
-                              "% of OI-Nonreportable-Long (All)", "% of OI-Nonreportable-Short (All)" ]]
+    filtered_df = filtered_df[["Market and Exchange Names", "As of Date in Form YYYY-MM-DD", 
+                               "Noncommercial Positions-Long (All)", "Noncommercial Positions-Short (All)", 
+                               "Change in Noncommercial-Long (All)", "Change in Noncommercial-Short (All)",
+                               "% of OI-Noncommercial-Long (All)", "% of OI-Noncommercial-Short (All)",
+                               "% of OI-Nonreportable-Long (All)", "% of OI-Nonreportable-Short (All)"]]
     
-    # Calculate 'Flip' column
-    filtered_df['Flip'] = filtered_df["% of OI-Noncommercial-Long (All)"] - filtered_df["% of OI-Noncommercial-Short (All)"]
+    # Calculate 'Flip' columns for both Noncommercial and Nonreportable
+    filtered_df['Noncommercial Flip'] = filtered_df["% of OI-Noncommercial-Long (All)"] - filtered_df["% of OI-Noncommercial-Short (All)"]
+    filtered_df['Nonreportable Flip'] = filtered_df["% of OI-Nonreportable-Long (All)"] - filtered_df["% of OI-Nonreportable-Short (All)"]
     
     # Set index
     filtered_df.set_index("As of Date in Form YYYY-MM-DD", inplace=True) 
     
     return filtered_df
 
-@st.cache_data
-def load_forex_data():
-    g10_pairs = ['EURUSD=X', 'USDJPY=X', 'GBPUSD=X', 'AUDUSD=X', 'NZDUSD=X', 'USDCAD=X', 'USDCHF=X', 'EURGBP=X', 'EURJPY=X', 'GBPJPY=X']
-    forex_data = {}
-    for pair in g10_pairs:
-        data = yf.download(pair, start='2024-01-01', end='2024-12-31', progress=False)
-        forex_data[pair] = data
-    return forex_data
-
-def plot_chart(data, title):
-    st.line_chart(data, use_container_width=True)
-    st.text(title)
-
-def plot_candlestick_chart(data, title):
-    fig = go.Figure(data=[go.Candlestick(
-        x=data.index,
-        open=data['Open'],
-        high=data['High'],
-        low=data['Low'],
-        close=data['Close']
-    )])
-    fig.update_layout(title=title, xaxis_title='Date', yaxis_title='Price')
+def plot_chart(data, title, y_axis_title):
+    fig = go.Figure()
+    
+    for column in data.columns:
+        fig.add_trace(go.Scatter(x=data.index, y=data[column], mode='lines', name=column))
+    
+    fig.update_layout(
+        title=title,
+        xaxis_title='Date',
+        yaxis_title=y_axis_title,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        )
+    )
+    
     st.plotly_chart(fig, use_container_width=True)
 
-def display_cot_charts(filtered_df):
+def display_cot_charts(filtered_df, instruments):
     st.header("COT Report Analysis")
     
-    # Get unique futures instruments containing "CHICAGO MERCANTILE EXCHANGE"
-    futures_list_display = filtered_df[filtered_df["Market and Exchange Names"].str.contains("CHICAGO MERCANTILE EXCHANGE")]["Market and Exchange Names"].unique()
+    # Use the list of instruments for the dropdown
+    selected_futures = st.selectbox("Select Futures Instrument", instruments)
     
-    selected_futures = st.selectbox("Select Futures Instrument", futures_list_display)
+    # Filter data for the selected futures
+    filtered_data = filtered_df[filtered_df["Market and Exchange Names"] == selected_futures]
     
-    # Display charts in three columns layout
-    col1, col2, col3 = st.columns([1, 1, 1])  # Split the layout into three columns
+    # Display charts in 2x2 layout
+    col1, col2 = st.columns(2)
     
     # First chart: Noncommercial Positions
     with col1:
-        filtered_data = filtered_df[filtered_df["Market and Exchange Names"] == selected_futures]
-        plot_chart(filtered_data[["% of OI-Noncommercial-Long (All)", "% of OI-Noncommercial-Short (All)"]],
-                   "Noncommercial and Nonreportable Positions")
+        plot_chart(
+            filtered_data[["% of OI-Noncommercial-Long (All)", "% of OI-Noncommercial-Short (All)"]],
+            "Noncommercial Positions - Long vs Short",
+            "Percentage of Open Interest"
+        )
     
     # Second Chart: Difference in Noncommercial Positions
     with col2:
-        filtered_data = filtered_df[filtered_df["Market and Exchange Names"] == selected_futures]
-        plot_chart(filtered_data["Flip"], "Difference in Noncommercial Positions i.e 'Flip'")
+        plot_chart(
+            filtered_data[["Noncommercial Flip"]],
+            "Noncommercial Flip (Long - Short)",
+            "Difference in Percentage"
+        )
     
-    # Third Chart: Nonreportable Positions
+    # Heading for Non-reportable section
+    st.subheader("Non-reportable")
+    
+    col3, col4 = st.columns(2)
+    
+    # Third Chart: Non-reportable Positions
     with col3:
-        filtered_data = filtered_df[filtered_df["Market and Exchange Names"] == selected_futures]
-        plot_chart(filtered_data[["% of OI-Nonreportable-Long (All)", "% of OI-Nonreportable-Short (All)"]],
-                   "Nonreportable Positions")
-
-def display_forex_charts(forex_data):
-    st.header("Forex Analysis")
+        plot_chart(
+            filtered_data[["% of OI-Nonreportable-Long (All)", "% of OI-Nonreportable-Short (All)"]],
+            "Non-reportable Positions - Long vs Short",
+            "Percentage of Open Interest"
+        )
     
-    # Select forex pair
-    g10_pairs_display = ['EURUSD', 'USDJPY', 'GBPUSD', 'AUDUSD', 'NZDUSD', 'USDCAD', 'USDCHF', 'EURGBP', 'EURJPY', 'GBPJPY']
-    selected_pair = st.selectbox("Select Forex Pair", g10_pairs_display)
-    
-    # Map display names to Yahoo Finance ticker symbols
-    pair_mapping = {
-        'EURUSD': 'EURUSD=X',
-        'USDJPY': 'USDJPY=X',
-        'GBPUSD': 'GBPUSD=X',
-        'AUDUSD': 'AUDUSD=X',
-        'NZDUSD': 'NZDUSD=X',
-        'USDCAD': 'USDCAD=X',
-        'USDCHF': 'USDCHF=X',
-        'EURGBP': 'EURGBP=X',
-        'EURJPY': 'EURJPY=X',
-        'GBPJPY': 'GBPJPY=X'
-    }
-    
-    # Plot selected forex pair data 
-    selected_pair_ticker = pair_mapping[selected_pair]
-    forex_pair_data = forex_data[selected_pair_ticker]
-    plot_candlestick_chart(forex_pair_data, f"{selected_pair} Price")
+    # Fourth Chart: Difference in Non-reportable Positions
+    with col4:
+        plot_chart(
+            filtered_data[["Nonreportable Flip"]],
+            "Non-reportable Flip (Long - Short)",
+            "Difference in Percentage"
+        )
 
 def main():
     # Load data
     df = load_data()
     
-    # Prepare data
-    filtered_df = prepare_data(df)
+    # Load instruments from file
+    instruments = load_instruments()
     
-    # Load forex data
-    forex_data = load_forex_data()
+    # Prepare data
+    filtered_df = prepare_data(df, instruments)
     
     # Title
-    st.title('Market Analysis Dashboard')
+    st.title('COT Report Analysis Dashboard')
     
-    # Create a menu for selecting between COT and Forex analysis
-    st.sidebar.header("Analysis Options")
-    menu = ["COT Report Analysis", "Forex Analysis"]
-    choice = st.sidebar.radio("Select Analysis Type", menu)
-    
-    if choice == "COT Report Analysis":
-        display_cot_charts(filtered_df)
-    elif choice == "Forex Analysis":
-        display_forex_charts(forex_data)
+    # Display COT charts
+    display_cot_charts(filtered_df, instruments)
 
 if __name__ == "__main__":
     main()
