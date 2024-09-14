@@ -2,6 +2,7 @@ import pandas as pd
 import cot_reports as cot
 import streamlit as st
 import plotly.graph_objects as go
+from streamlit.components.v1 import html
 
 # Set the page layout to wide
 st.set_page_config(layout="wide")
@@ -107,6 +108,31 @@ def display_cot_charts(filtered_df, instruments):
             "Difference in Percentage"
         )
 
+def display_economic_calendar():
+    st.header("Economic Calendar")
+    
+    calendar_html = """
+    <!-- TradingView Widget BEGIN -->
+    <div class="tradingview-widget-container">
+      <div class="tradingview-widget-container__widget"></div>
+      <div class="tradingview-widget-copyright"><a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank"><span class="blue-text">Track all markets on TradingView</span></a></div>
+      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-events.js" async>
+      {
+      "colorTheme": "light",
+      "isTransparent": false,
+      "width": "100%",
+      "height": "600",
+      "locale": "en",
+      "importanceFilter": "-1,0,1",
+      "countryFilter": "ar,au,br,ca,cn,fr,de,in,id,it,jp,kr,mx,ru,sa,za,tr,gb,us,eu"
+      }
+      </script>
+    </div>
+    <!-- TradingView Widget END -->
+    """
+    
+    html(calendar_html, height=600)
+
 def main():
     # Load data
     df = load_data()
@@ -117,11 +143,19 @@ def main():
     # Prepare data
     filtered_df = prepare_data(df, instruments)
     
-    # Title
-    st.title('COT Report Analysis Dashboard')
+    # Sidebar for navigation
+    st.sidebar.title('Menu')
+    page = st.sidebar.radio('Go to', ['COT Report Analysis', 'Economic Calendar'])
     
-    # Display COT charts
-    display_cot_charts(filtered_df, instruments)
+    if page == 'COT Report Analysis':
+        # Title
+        st.title('COT Report Analysis Dashboard')
+        
+        # Display COT charts
+        display_cot_charts(filtered_df, instruments)
+    elif page == 'Economic Calendar':
+        # Display Economic Calendar
+        display_economic_calendar()
 
 if __name__ == "__main__":
     main()
