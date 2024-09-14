@@ -131,7 +131,32 @@ def display_economic_calendar():
     <!-- TradingView Widget END -->
     """
     
-    html(calendar_html, height=600)
+    html(calendar_html, height=650)
+
+def display_news():
+    st.header("Market News")
+    
+    news_html = """
+    <!-- TradingView Widget BEGIN -->
+    <div class="tradingview-widget-container">
+      <div class="tradingview-widget-container__widget"></div>
+      <div class="tradingview-widget-copyright"><a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank"><span class="blue-text">Track all markets on TradingView</span></a></div>
+      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-timeline.js" async>
+      {
+      "feedMode": "all_symbols",
+      "isTransparent": false,
+      "displayMode": "regular",
+      "width": "100%",
+      "height": "600",
+      "colorTheme": "light",
+      "locale": "en"
+      }
+      </script>
+    </div>
+    <!-- TradingView Widget END -->
+    """
+    
+    html(news_html, height=650)
 
 def main():
     # Load data
@@ -144,8 +169,8 @@ def main():
     filtered_df = prepare_data(df, instruments)
     
     # Sidebar for navigation
-    st.sidebar.title('Menu')
-    page = st.sidebar.radio('Go to', ['COT Report Analysis', 'Economic Calendar'])
+    st.sidebar.title('Navigation')
+    page = st.sidebar.radio('Go to', ['COT Report Analysis', 'Economic Calendar', 'Market News'])
     
     if page == 'COT Report Analysis':
         # Title
@@ -156,6 +181,9 @@ def main():
     elif page == 'Economic Calendar':
         # Display Economic Calendar
         display_economic_calendar()
+    elif page == 'Market News':
+        # Display Market News
+        display_news()
 
 if __name__ == "__main__":
     main()
